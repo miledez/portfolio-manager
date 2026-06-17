@@ -36,7 +36,7 @@ toward a strategy analyzer (target allocation + rebalancing).
 1. ✅ Scaffold (Next + TS + Tailwind v4 tokens), `lib/` utils, push to GitHub + Vercel.
 2. ✅ Supabase + email magic-link auth (`@supabase/ssr` clients, middleware, `/login`, `/auth/callback`).
 3. ✅ Port dashboard UI from the draft; read/write `holdings` in Supabase (server actions + revalidate).
-4. ⏳ Live prices via `app/api/prices/route.ts` (Finnhub, server-side key).
+4. ✅ Live prices via `app/api/prices/route.ts` (Finnhub `/quote`; crypto via Binance candles).
 5. ⏳ Daily snapshots (`app/api/snapshot/route.ts` + Vercel Cron) + recharts development chart.
 6. ⏳ Strategy analyzer (`allocation_targets`: target sliders, drift, rebalance hints).
 

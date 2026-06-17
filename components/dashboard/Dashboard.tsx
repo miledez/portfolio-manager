@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { RefreshCw } from "lucide-react";
 import { signOut, removeHolding } from "@/app/actions";
 import type { Holding } from "@/lib/types";
+import { isCash } from "@/lib/constants";
 import {
   computeRows,
   computeTotals,
@@ -22,8 +24,11 @@ export default function Dashboard({
   userEmail: string;
 }) {
   const [allocBy, setAllocBy] = useState<AllocBy>("ticker");
-  // Live prices are fetched on demand and held here (wired up in Phase 4).
-  const [prices] = useState<Record<string, number>>({});
+  // Live prices are fetched on demand and held here, keyed by ticker.
+  const [prices, setPrices] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -34,6 +39,39 @@ export default function Dashboard({
     [rows, allocBy],
   );
   const assetTypes = new Set(holdings.map((h) => h.asset_class)).size;
+
+  async function updatePrices() {
+    const items = holdings
+      .filter((h) => !isCash(h.asset_class))
+      .map((h) => ({ ticker: h.ticker, assetClass: h.asset_class }));
+
+    if (items.length === 0) {
+      setUpdatedAt(new Date());
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      if (!res.ok) throw new Error("request failed");
+      const data = (await res.json()) as { prices?: Record<string, number> };
+      const fetched = data.prices ?? {};
+      if (Object.keys(fetched).length === 0) throw new Error("no prices");
+      setPrices((prev) => ({ ...prev, ...fetched }));
+      setUpdatedAt(new Date());
+    } catch {
+      setError(
+        "Couldn't fetch prices. Check your tickers are valid symbols and try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function handleRemove(id: string) {
     setRemovingId(id);
@@ -49,20 +87,43 @@ export default function Dashboard({
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4">
           <div>
             <h1 className="text-lg font-semibold tracking-tight">Portfolio</h1>
-            <p className="text-xs text-muted">{userEmail}</p>
+            <p className="text-xs text-muted">
+              {updatedAt
+                ? `Prices updated ${updatedAt.toLocaleTimeString()}`
+                : "Prices not yet updated"}
+            </p>
           </div>
-          <form action={signOut}>
+          <div className="flex items-center gap-3">
             <button
-              type="submit"
-              className="rounded-md px-3 py-2 text-sm text-muted transition-colors hover:text-negative"
+              onClick={updatePrices}
+              disabled={loading || holdings.length === 0}
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-40"
             >
-              Sign out
+              <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+              {loading ? "Updating…" : "Update prices"}
             </button>
-          </form>
+            <span className="hidden text-xs text-muted sm:inline">
+              {userEmail}
+            </span>
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="rounded-md px-2 py-2 text-sm text-muted transition-colors hover:text-negative"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl space-y-6 px-5 py-6">
+        {error && (
+          <div className="rounded-md border border-negative/30 bg-negative/5 px-4 py-3 text-sm text-negative">
+            {error}
+          </div>
+        )}
+
         <SummaryStats
           totals={totals}
           holdingsCount={holdings.length}
