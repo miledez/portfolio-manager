@@ -15,12 +15,15 @@ import SummaryStats from "./SummaryStats";
 import AddHoldingForm from "./AddHoldingForm";
 import HoldingsTable from "./HoldingsTable";
 import AllocationCard from "./AllocationCard";
+import DevelopmentChart, { type SnapshotPoint } from "./DevelopmentChart";
 
 export default function Dashboard({
   holdings,
+  snapshots,
   userEmail,
 }: {
   holdings: Holding[];
+  snapshots: SnapshotPoint[];
   userEmail: string;
 }) {
   const [allocBy, setAllocBy] = useState<AllocBy>("ticker");
@@ -146,6 +149,14 @@ export default function Dashboard({
             totalValue={totals.value}
           />
         </div>
+
+        <DevelopmentChart snapshots={snapshots} />
+
+        <p className="text-xs leading-relaxed text-[#9CA3AF]">
+          Prices are fetched live on request and may be delayed. Daily value
+          snapshots are saved server-side and build up over time. Not financial
+          advice.
+        </p>
       </main>
     </div>
   );

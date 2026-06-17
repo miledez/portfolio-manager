@@ -67,3 +67,14 @@ export async function removeHolding(id: string): Promise<void> {
   await supabase.from("holdings").delete().eq("id", id);
   revalidatePath("/");
 }
+
+export async function clearSnapshots(): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("snapshots").delete().eq("user_id", user.id);
+  revalidatePath("/");
+}
