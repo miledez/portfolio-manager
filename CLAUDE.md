@@ -38,7 +38,7 @@ toward a strategy analyzer (target allocation + rebalancing).
 3. ✅ Port dashboard UI from the draft; read/write `holdings` in Supabase (server actions + revalidate).
 4. ✅ Live prices via `app/api/prices/route.ts` (Finnhub `/quote`; crypto via Binance candles).
 5. ✅ Daily snapshots (`app/api/snapshot/route.ts` + Vercel Cron, service-role) + recharts development chart.
-6. ⏳ Strategy analyzer (`allocation_targets`: target sliders, drift, rebalance hints).
+6. ✅ Strategy analyzer (`allocation_targets`: target sliders, drift, rebalance hints).
 
 ## Commands
 ```bash

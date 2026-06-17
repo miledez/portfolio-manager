@@ -16,14 +16,17 @@ import AddHoldingForm from "./AddHoldingForm";
 import HoldingsTable from "./HoldingsTable";
 import AllocationCard from "./AllocationCard";
 import DevelopmentChart, { type SnapshotPoint } from "./DevelopmentChart";
+import StrategyCard from "./StrategyCard";
 
 export default function Dashboard({
   holdings,
   snapshots,
+  initialTargets,
   userEmail,
 }: {
   holdings: Holding[];
   snapshots: SnapshotPoint[];
+  initialTargets: Record<string, number>;
   userEmail: string;
 }) {
   const [allocBy, setAllocBy] = useState<AllocBy>("ticker");
@@ -42,6 +45,13 @@ export default function Dashboard({
     [rows, allocBy],
   );
   const assetTypes = new Set(holdings.map((h) => h.asset_class)).size;
+  const classValues = useMemo(() => {
+    const m: Record<string, number> = {};
+    rows.forEach((r) => {
+      if (r.value != null) m[r.asset_class] = (m[r.asset_class] ?? 0) + r.value;
+    });
+    return m;
+  }, [rows]);
 
   async function updatePrices() {
     const items = holdings
@@ -149,6 +159,12 @@ export default function Dashboard({
             totalValue={totals.value}
           />
         </div>
+
+        <StrategyCard
+          initialTargets={initialTargets}
+          currentByClass={classValues}
+          totalValue={totals.value}
+        />
 
         <DevelopmentChart snapshots={snapshots} />
 

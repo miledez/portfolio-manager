@@ -78,3 +78,27 @@ export async function clearSnapshots(): Promise<void> {
   await supabase.from("snapshots").delete().eq("user_id", user.id);
   revalidatePath("/");
 }
+
+export async function saveTargets(
+  targets: Record<string, number>,
+): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You are signed out. Refresh and sign in again." };
+
+  const rows = ASSET_CLASSES.map((cls) => ({
+    user_id: user.id,
+    asset_class: cls,
+    target_pct: Math.max(0, Math.min(100, Math.round(Number(targets[cls] ?? 0)))),
+  }));
+
+  const { error } = await supabase
+    .from("allocation_targets")
+    .upsert(rows, { onConflict: "user_id,asset_class" });
+  if (error) return { error: "Couldn't save targets. Try again." };
+
+  revalidatePath("/");
+  return {};
+}
