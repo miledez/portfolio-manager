@@ -89,6 +89,12 @@ export default function AddHoldingForm() {
           </button>
         </div>
       </form>
+      <p className="mt-2 text-[11px] leading-relaxed text-muted">
+        US tickers as-is (AAPL). Danish: add{" "}
+        <span className="text-ink">.CO</span> (NOVO-B.CO). Brazilian: add{" "}
+        <span className="text-ink">.SA</span> (PETR4.SA). Enter the buy price in
+        the stock&apos;s own currency; cash in BRL.
+      </p>
       {error && <p className="mt-2 text-sm text-negative">{error}</p>}
     </section>
   );

@@ -1,6 +1,6 @@
 import { Trash2 } from "lucide-react";
 import ClassBadge from "@/components/ui/ClassBadge";
-import { usd, pct } from "@/lib/format";
+import { money, pct } from "@/lib/format";
 import { isCash } from "@/lib/constants";
 import type { Row } from "@/lib/portfolio";
 
@@ -61,20 +61,20 @@ export default function HoldingsTable({
                   </td>
                   <td className="px-4 py-3">{r.quantity}</td>
                   <td className="px-4 py-3 text-muted">
-                    {cash ? "—" : usd(r.buy_price)}
+                    {cash ? "—" : money(r.buy_price, r.currency)}
                   </td>
                   <td className="px-4 py-3 text-muted">{r.buy_date}</td>
                   <td className="px-4 py-3">
-                    {cash ? "—" : r.price != null ? usd(r.price) : "—"}
+                    {cash ? "—" : r.price != null ? money(r.price, r.currency) : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    {r.value != null ? usd(r.value) : "—"}
+                    {r.value != null ? money(r.value) : "—"}
                   </td>
                   <td className={`px-4 py-3 ${cash ? "text-muted" : gainClass}`}>
                     {cash
                       ? "—"
                       : r.gain != null
-                        ? `${usd(r.gain)} (${pct(r.gainPct)})`
+                        ? `${money(r.gain)} (${pct(r.gainPct)})`
                         : "—"}
                   </td>
                   <td className="px-4 py-3 text-right">

@@ -24,6 +24,9 @@ toward a strategy analyzer (target allocation + rebalancing).
 - DB↔draft field map: `asset_class`↔`cls`, `quantity`↔`qty`, `buy_price`↔`cost`, `buy_date`↔`date`.
   Live `price` is fetched on demand and held in client state — not persisted on `holdings`.
 - Never expose `SUPABASE_SERVICE_ROLE_KEY`, `MARKET_DATA_API_KEY`, or `ANTHROPIC_API_KEY` to the client.
+- Multi-currency: base = **BRL** (`lib/currency.ts`). Hold prices native, convert to base via Yahoo FX
+  (`<CUR>BRL=X`). Route by ticker suffix: `.CO`→DKK & `.SA`→BRL via Yahoo, crypto/US→USD via Finnhub.
+  Per-row Buy/Now show native currency; Value/totals/snapshots in BRL.
 - Do NOT redesign — match `DESIGN.md` exactly. One navy accent; green/red only for gain/loss.
 
 ## Security

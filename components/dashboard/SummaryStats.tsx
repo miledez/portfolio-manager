@@ -1,6 +1,6 @@
 import { TrendingUp, TrendingDown } from "lucide-react";
 import Stat from "@/components/ui/Stat";
-import { usd, pct } from "@/lib/format";
+import { money, pct } from "@/lib/format";
 import type { Totals } from "@/lib/portfolio";
 
 export default function SummaryStats({
@@ -23,10 +23,10 @@ export default function SummaryStats({
     <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
       <Stat
         label="Total value"
-        value={totals.fullyPriced || hasValue ? usd(totals.value) : "—"}
+        value={totals.fullyPriced || hasValue ? money(totals.value) : "—"}
         big
       />
-      <Stat label="Cost basis" value={usd(totals.cost)} />
+      <Stat label="Cost basis" value={money(totals.cost)} />
 
       <div className="rounded-lg border border-hairline bg-surface p-4">
         <p className="mb-1 text-xs text-muted">Total gain / loss</p>
@@ -34,7 +34,7 @@ export default function SummaryStats({
           {hasValue ? (
             <>
               {totals.gain >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-              {usd(totals.gain)}
+              {money(totals.gain)}
             </>
           ) : (
             "—"

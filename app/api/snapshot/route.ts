@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { fetchPrices, type PriceItem } from "@/lib/pricing";
+import { fetchPrices, fetchFxRates, type PriceItem } from "@/lib/pricing";
 import { isCash } from "@/lib/constants";
+import { BASE_CURRENCY, nativeCurrency } from "@/lib/currency";
 
 // Allow enough time to price every ticker across all users.
 export const maxDuration = 60;
@@ -47,15 +48,21 @@ export async function GET(request: Request) {
     priceItems.push({ ticker: h.ticker, assetClass: h.asset_class });
   }
   const { prices } = await fetchPrices(priceItems, apiKey);
+  const fx = await fetchFxRates(
+    holdings.map((h) => nativeCurrency(h.ticker, h.asset_class)),
+  );
 
-  // Sum priced value per user (cash = quantity * 1; unpriced contributes 0).
+  // Sum each user's value in the base currency (cash = quantity * 1; unpriced
+  // or unconvertible holdings contribute 0).
   const totalByUser = new Map<string, number>();
   for (const h of holdings) {
+    const currency = nativeCurrency(h.ticker, h.asset_class);
+    const rate = fx[currency] ?? (currency === BASE_CURRENCY ? 1 : null);
     const price = isCash(h.asset_class) ? 1 : prices[h.ticker];
-    if (price == null) continue;
+    if (price == null || rate == null) continue;
     totalByUser.set(
       h.user_id,
-      (totalByUser.get(h.user_id) ?? 0) + h.quantity * price,
+      (totalByUser.get(h.user_id) ?? 0) + h.quantity * price * rate,
     );
   }
 

@@ -8,7 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { usd, compact, fmtDay } from "@/lib/format";
+import { money, compact, fmtDay } from "@/lib/format";
 import { clearSnapshots } from "@/app/actions";
 
 export interface SnapshotPoint {
@@ -78,10 +78,10 @@ export default function DevelopmentChart({
                 tick={{ fontSize: 11, fill: "#6B7280" }}
                 tickLine={false}
                 axisLine={false}
-                width={52}
+                width={64}
               />
               <Tooltip
-                formatter={(value) => usd(Number(value))}
+                formatter={(value) => money(Number(value))}
                 labelFormatter={(label) => fmtDay(String(label))}
               />
               <Line

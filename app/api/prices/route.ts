@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchPrices, type PriceItem } from "@/lib/pricing";
+import { fetchPrices, fetchFxRates, type PriceItem } from "@/lib/pricing";
 import { ASSET_CLASSES, isCash, type AssetClass } from "@/lib/constants";
+import { nativeCurrency } from "@/lib/currency";
 
 // POST { items: [{ ticker, assetClass }] } -> { prices: {TICKER: number}, missing: [] }
 export async function POST(request: Request) {
@@ -31,11 +32,14 @@ export async function POST(request: Request) {
 
   const items = parseItems(body);
   if (items.length === 0) {
-    return NextResponse.json({ prices: {}, missing: [] });
+    return NextResponse.json({ prices: {}, fx: {}, missing: [] });
   }
 
   const result = await fetchPrices(items, apiKey);
-  return NextResponse.json(result);
+  const fx = await fetchFxRates(
+    items.map((i) => nativeCurrency(i.ticker, i.assetClass)),
+  );
+  return NextResponse.json({ ...result, fx });
 }
 
 function parseItems(body: unknown): PriceItem[] {

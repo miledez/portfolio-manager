@@ -22,23 +22,30 @@ export default function Dashboard({
   holdings,
   snapshots,
   initialTargets,
+  initialFx,
   userEmail,
 }: {
   holdings: Holding[];
   snapshots: SnapshotPoint[];
   initialTargets: Record<string, number>;
+  initialFx: Record<string, number>;
   userEmail: string;
 }) {
   const [allocBy, setAllocBy] = useState<AllocBy>("ticker");
-  // Live prices are fetched on demand and held here, keyed by ticker.
+  // Live (native) prices are fetched on demand and held here, keyed by ticker.
   const [prices, setPrices] = useState<Record<string, number>>({});
+  // FX rates (currency -> base). Seeded from the server, refreshed on update.
+  const [fx, setFx] = useState<Record<string, number>>(initialFx);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  const rows = useMemo(() => computeRows(holdings, prices), [holdings, prices]);
+  const rows = useMemo(
+    () => computeRows(holdings, prices, fx),
+    [holdings, prices, fx],
+  );
   const totals = useMemo(() => computeTotals(rows), [rows]);
   const allocation = useMemo(
     () => computeAllocation(rows, allocBy),
@@ -72,7 +79,11 @@ export default function Dashboard({
         body: JSON.stringify({ items }),
       });
       if (!res.ok) throw new Error("request failed");
-      const data = (await res.json()) as { prices?: Record<string, number> };
+      const data = (await res.json()) as {
+        prices?: Record<string, number>;
+        fx?: Record<string, number>;
+      };
+      if (data.fx) setFx((prev) => ({ ...prev, ...data.fx }));
       const fetched = data.prices ?? {};
       if (Object.keys(fetched).length === 0) throw new Error("no prices");
       setPrices((prev) => ({ ...prev, ...fetched }));

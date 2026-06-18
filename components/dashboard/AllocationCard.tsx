@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { CLASS_COLOR, DONUT, type AssetClass } from "@/lib/constants";
-import { usd } from "@/lib/format";
+import { money } from "@/lib/format";
 import type { AllocSlice, AllocBy } from "@/lib/portfolio";
 
 export default function AllocationCard({
@@ -61,7 +61,7 @@ export default function AllocationCard({
                     <Cell key={a.name} fill={colorFor(a.name, i)} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => usd(Number(value))} />
+                <Tooltip formatter={(value) => money(Number(value))} />
               </PieChart>
             </ResponsiveContainer>
           </div>

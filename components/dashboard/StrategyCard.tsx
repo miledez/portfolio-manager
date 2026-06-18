@@ -1,6 +1,6 @@
 import { useState, useTransition } from "react";
 import { ASSET_CLASSES, CLASS_COLOR, type AssetClass } from "@/lib/constants";
-import { usd } from "@/lib/format";
+import { money } from "@/lib/format";
 import { saveTargets } from "@/app/actions";
 
 export default function StrategyCard({
@@ -59,8 +59,8 @@ export default function StrategyCard({
           let hint = "—";
           if (priced) {
             if (Math.abs(delta) < 1) hint = "On target";
-            else if (delta > 0) hint = `Add ${usd(delta)}`;
-            else hint = `Trim ${usd(-delta)}`;
+            else if (delta > 0) hint = `Add ${money(delta)}`;
+            else hint = `Trim ${money(-delta)}`;
           }
           const actionable = priced && hint !== "On target";
 
