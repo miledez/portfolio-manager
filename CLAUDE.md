@@ -85,6 +85,9 @@ schema; the Supabase CLI/MCP is NOT linked to this project's account, so keep it
 ## Deploy & environment
 - Push to `main` → Vercel auto-deploys (project linked to the repo). The Vercel dashboard Framework
   Preset is null, so `vercel.json` pins `"framework": "nextjs"` — keep that, or every route 404s.
+- Optional env vars: `ANTHROPIC_API_KEY` (enables the AI analysis on `/research` via
+  `app/api/advice` → `lib/advisor.ts`, model `claude-opus-4-8` with web search; the feature is
+  hidden when unset), `BRAPI_TOKEN` (lifts brapi's free-tier limit for the Ibovespa benchmark).
 - Required env vars in Vercel **and** `.env.local` (env changes require a redeploy to take effect):
   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
   `MARKET_DATA_API_KEY` (Finnhub), `CRON_SECRET`.
