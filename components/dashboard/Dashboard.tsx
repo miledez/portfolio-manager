@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { RefreshCw, LineChart } from "lucide-react";
 import { signOut, removeHolding } from "@/app/actions";
 import type { Holding } from "@/lib/types";
-import { isCash } from "@/lib/constants";
+import { isCash, isFixedIncome } from "@/lib/constants";
 import {
   computeRows,
   computeTotals,
@@ -23,12 +24,14 @@ export default function Dashboard({
   snapshots,
   initialTargets,
   initialFx,
+  initialFiValues,
   userEmail,
 }: {
   holdings: Holding[];
   snapshots: SnapshotPoint[];
   initialTargets: Record<string, number>;
   initialFx: Record<string, number>;
+  initialFiValues: Record<string, number>;
   userEmail: string;
 }) {
   const [allocBy, setAllocBy] = useState<AllocBy>("ticker");
@@ -43,8 +46,8 @@ export default function Dashboard({
   const [, startTransition] = useTransition();
 
   const rows = useMemo(
-    () => computeRows(holdings, prices, fx),
-    [holdings, prices, fx],
+    () => computeRows(holdings, prices, fx, initialFiValues),
+    [holdings, prices, fx, initialFiValues],
   );
   const totals = useMemo(() => computeTotals(rows), [rows]);
   const allocation = useMemo(
@@ -62,7 +65,7 @@ export default function Dashboard({
 
   async function updatePrices() {
     const items = holdings
-      .filter((h) => !isCash(h.asset_class))
+      .filter((h) => !isCash(h.asset_class) && !isFixedIncome(h.asset_class))
       .map((h) => ({ ticker: h.ticker, assetClass: h.asset_class }));
 
     if (items.length === 0) {
@@ -118,6 +121,12 @@ export default function Dashboard({
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href="/research"
+              className="inline-flex items-center gap-2 rounded-md border border-hairline px-3 py-2 text-sm font-medium text-ink transition-colors hover:border-primary hover:text-primary"
+            >
+              <LineChart size={15} /> Research
+            </Link>
             <button
               onClick={updatePrices}
               disabled={loading || holdings.length === 0}
