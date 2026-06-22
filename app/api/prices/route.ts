@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { fetchPrices, fetchFxRates, type PriceItem } from "@/lib/pricing";
-import { ASSET_CLASSES, isCash, type AssetClass } from "@/lib/constants";
+import { ASSET_CLASSES, isCash } from "@/lib/constants";
 import { nativeCurrency } from "@/lib/currency";
 
 // POST { items: [{ ticker, assetClass }] } -> { prices: {TICKER: number}, missing: [] }
@@ -57,7 +57,7 @@ function parseItems(body: unknown): PriceItem[] {
       .toUpperCase();
     const assetClass = String((entry as { assetClass?: unknown }).assetClass ?? "");
     if (!ticker) continue;
-    if (!ASSET_CLASSES.includes(assetClass as AssetClass)) continue;
+    if (!(ASSET_CLASSES as readonly string[]).includes(assetClass)) continue;
     if (isCash(assetClass)) continue; // cash never needs a price
     items.push({ ticker, assetClass });
   }

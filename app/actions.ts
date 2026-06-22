@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { ASSET_CLASSES, isCash, type AssetClass } from "@/lib/constants";
+import { ASSET_CLASSES, isCash } from "@/lib/constants";
 
 export async function signOut() {
   const supabase = await createClient();
@@ -24,8 +24,8 @@ export async function addHolding(input: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "You are signed out. Refresh and sign in again." };
 
-  const assetClass = input.assetClass as AssetClass;
-  if (!ASSET_CLASSES.includes(assetClass)) {
+  const assetClass = input.assetClass;
+  if (!(ASSET_CLASSES as readonly string[]).includes(assetClass)) {
     return { error: "Pick a valid asset type." };
   }
 
@@ -54,6 +54,93 @@ export async function addHolding(input: {
 
   revalidatePath("/");
   return {};
+}
+
+const FI_INDEXES = ["CDI", "IPCA", "PRE"] as const;
+
+export async function addFixedIncome(input: {
+  label: string;
+  principal: number;
+  buyDate: string;
+  fiIndex: string;
+  fiRate: number;
+  fiMaturity?: string;
+}): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You are signed out. Refresh and sign in again." };
+
+  const label = input.label.trim().toUpperCase();
+  const principal = Number(input.principal);
+  const fiRate = Number(input.fiRate);
+  const fiIndex = input.fiIndex as (typeof FI_INDEXES)[number];
+
+  if (!label) return { error: "A label is required." };
+  if (!FI_INDEXES.includes(fiIndex)) return { error: "Pick CDI, IPCA or PRE." };
+  if (!Number.isFinite(principal) || principal <= 0) {
+    return { error: "Principal must be greater than zero." };
+  }
+  if (!Number.isFinite(fiRate) || fiRate <= 0) {
+    return { error: "Enter a valid rate." };
+  }
+
+  const { error } = await supabase.from("holdings").insert({
+    user_id: user.id,
+    ticker: label,
+    asset_class: "FixedIncome",
+    quantity: 1,
+    buy_price: principal, // principal in BRL
+    buy_date: input.buyDate || new Date().toISOString().slice(0, 10),
+    fi_index: fiIndex,
+    fi_rate: fiRate,
+    fi_maturity: input.fiMaturity || null,
+  });
+  if (error) return { error: "Couldn't save the holding. Try again." };
+
+  revalidatePath("/");
+  return {};
+}
+
+export async function addContribution(input: {
+  amount: number;
+  flowDate: string;
+  note?: string;
+}): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You are signed out. Refresh and sign in again." };
+
+  const amount = Number(input.amount);
+  if (!Number.isFinite(amount) || amount === 0) {
+    return { error: "Amount must be non-zero (+ deposit, − withdrawal)." };
+  }
+
+  const { error } = await supabase.from("contributions").insert({
+    user_id: user.id,
+    amount,
+    flow_date: input.flowDate || new Date().toISOString().slice(0, 10),
+    note: input.note?.trim() || null,
+  });
+  if (error) return { error: "Couldn't save the contribution. Try again." };
+
+  revalidatePath("/");
+  return {};
+}
+
+export async function removeContribution(id: string): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  // RLS scopes the delete to the signed-in user's own rows.
+  await supabase.from("contributions").delete().eq("id", id);
+  revalidatePath("/");
 }
 
 export async function removeHolding(id: string): Promise<void> {

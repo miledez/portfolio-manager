@@ -22,6 +22,9 @@ export interface Database {
           quantity: number;
           buy_price: number;
           buy_date: string;
+          fi_index: string | null;
+          fi_rate: number | null;
+          fi_maturity: string | null;
           created_at: string;
         };
         Insert: {
@@ -32,6 +35,9 @@ export interface Database {
           quantity: number;
           buy_price?: number;
           buy_date?: string;
+          fi_index?: string | null;
+          fi_rate?: number | null;
+          fi_maturity?: string | null;
           created_at?: string;
         };
         Update: {
@@ -42,6 +48,36 @@ export interface Database {
           quantity?: number;
           buy_price?: number;
           buy_date?: string;
+          fi_index?: string | null;
+          fi_rate?: number | null;
+          fi_maturity?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      contributions: {
+        Row: {
+          id: string;
+          user_id: string;
+          flow_date: string;
+          amount: number;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          flow_date?: string;
+          amount: number;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          flow_date?: string;
+          amount?: number;
+          note?: string | null;
           created_at?: string;
         };
         Relationships: [];
