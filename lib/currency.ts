@@ -9,6 +9,7 @@ export const BASE_CURRENCY = "BRL";
 //   everything else (US)      -> USD (Finnhub /quote)
 export function nativeCurrency(ticker: string, assetClass: string): string {
   if (assetClass === "Cash") return BASE_CURRENCY;
+  if (assetClass === "FixedIncome") return BASE_CURRENCY; // BR fixed income, valued in BRL
   if (assetClass === "Crypto") return "USD";
   const t = ticker.toUpperCase();
   if (t.endsWith(".CO")) return "DKK";
