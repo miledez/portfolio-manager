@@ -2,6 +2,12 @@
 
 Project context for Claude Code. Read this and `DESIGN.md` before writing any code.
 
+> **Status (shipped):** the build roadmap below (steps 1–6) is complete, plus a **Research** view
+> (`/research`) — a nominal/real/after-tax comparison across holdings and benchmarks (CDI/IPCA/Ibovespa),
+> Brazilian fixed income (CDBs), a contributions log with money-weighted (XIRR) return, and an optional
+> AI analysis. **The operative, up-to-date engineering reference is the repo-root `/CLAUDE.md`** — this
+> file remains the original handoff spec; `DESIGN.md` is still binding for visuals.
+
 ## What we're building
 A personal investment & asset portfolio dashboard. Track holdings across asset classes,
 pull live prices on demand, see allocation, and watch total value develop over time via
@@ -70,7 +76,9 @@ npx supabase start     # local stack (optional)
 npx supabase db push   # apply migrations
 ```
 
-## Build roadmap (do in order; deploy after each)
+## Build roadmap (do in order; deploy after each) — ✅ all shipped
+> Steps 1–6 are implemented and deployed. A Research/comparison feature + AI analysis were added on top
+> (see repo-root `/CLAUDE.md`). Kept here as the original plan of record.
 1. **Scaffold** Next.js + TS + Tailwind, wire design tokens from `DESIGN.md`, push to GitHub, deploy to Vercel.
 2. **Supabase**: run `supabase/schema.sql`, add `@supabase/ssr` clients, email magic-link auth, `/login`.
 3. **Port UI** from `reference/dashboard-draft.jsx`: summary stats, add-holding form, holdings table, allocation card (ticker/class toggle). Read/write `holdings` in Supabase. Match `DESIGN.md` exactly.
