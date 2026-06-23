@@ -17,7 +17,7 @@ const SYSTEM = `You are an analyst writing a brief, plain-language portfolio not
 
 Rules:
 - Use ONLY the figures provided in the user message. Quote them exactly — never recompute, round differently, or invent any number, return, or price.
-- Use web search to add CURRENT qualitative context (recent news, rate environment, sentiment) for the major holdings and for the CDI/IPCA/Ibovespa benchmarks. Search proactively — do not rely on memory for anything time-sensitive.
+- Use web search to add CURRENT qualitative context (recent news, rate environment, sentiment) for the major holdings and for the CDI/IPCA/Ibovespa benchmarks. Keep it lean: at most 3 targeted searches, batching topics into broad queries rather than searching each holding separately. Do not rely on memory for anything time-sensitive.
 - Be concise and concrete. Organise the note into short labelled sections in plain prose (no markdown symbols, no tables): "Performance", "Versus benchmarks", "Risks & FX", "Tax angle", and "What to watch". A few sentences each.
 - Frame everything as informational observations about the user's own portfolio. Do not tell the user to buy or sell specific securities. End with a one-line reminder that this is not financial advice.`;
 
@@ -61,7 +61,10 @@ export async function generateAdvice(data: ResearchData): Promise<AdviceResult> 
     max_tokens: 4096,
     thinking: { type: "adaptive" },
     system: SYSTEM,
-    tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 6 }],
+    // Each search round-trips to the web and back through the model, so it's
+    // the dominant latency cost. Cap it tighter to stay well under the 60s
+    // function limit — 3 targeted searches are enough for qualitative context.
+    tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 3 }],
     messages: [
       {
         role: "user",
@@ -73,8 +76,9 @@ export async function generateAdvice(data: ResearchData): Promise<AdviceResult> 
   };
 
   let response = await client.messages.create(params);
-  // Web search runs a server-side loop; resume on pause_turn.
-  for (let i = 0; i < 5 && response.stop_reason === "pause_turn"; i++) {
+  // Web search runs a server-side loop; resume on pause_turn. Bounded low so a
+  // stalled search loop can't run the route past its function timeout.
+  for (let i = 0; i < 3 && response.stop_reason === "pause_turn"; i++) {
     params.messages.push({ role: "assistant", content: response.content });
     response = await client.messages.create(params);
   }
