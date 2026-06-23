@@ -18,7 +18,20 @@ export default function AdvisorCard({ enabled }: { enabled: boolean }) {
     setError("");
     try {
       const res = await fetch("/api/advice", { method: "POST" });
-      const data = await res.json();
+      // The handler returns JSON, but a platform-level timeout/crash (the
+      // analysis can run close to the function limit) yields a plain-text
+      // error page. Parse defensively so we never surface a JSON parse error.
+      const raw = await res.text();
+      let data: Partial<Advice> & { error?: string } = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        throw new Error(
+          res.status === 504
+            ? "The analysis took too long and timed out. Try again in a moment."
+            : "Couldn't generate the analysis. Try again in a moment.",
+        );
+      }
       if (!res.ok) throw new Error(data?.error || "request failed");
       setAdvice(data as Advice);
     } catch (e) {
