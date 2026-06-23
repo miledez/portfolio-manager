@@ -6,8 +6,15 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { ResearchData } from "./research";
 import { money, pct } from "./format";
 
+export interface AdviceRow {
+  area: string;
+  observation: string;
+  risk: string;
+}
+
 export interface AdviceResult {
-  analysis: string;
+  summary: string;
+  rows: AdviceRow[];
   citations: { url: string; title: string }[];
 }
 
@@ -18,8 +25,16 @@ const SYSTEM = `You are an analyst writing a brief, plain-language portfolio not
 Rules:
 - Use ONLY the figures provided in the user message. Quote them exactly — never recompute, round differently, or invent any number, return, or price.
 - Use web search to add CURRENT qualitative context (recent news, rate environment, sentiment) for the major holdings and for the CDI/IPCA/Ibovespa benchmarks. Keep it lean: at most 3 targeted searches, batching topics into broad queries rather than searching each holding separately. Do not rely on memory for anything time-sensitive.
-- Be concise and concrete. Organise the note into short labelled sections in plain prose (no markdown symbols, no tables): "Performance", "Versus benchmarks", "Risks & FX", "Tax angle", and "What to watch". A few sentences each.
-- Frame everything as informational observations about the user's own portfolio. Do not tell the user to buy or sell specific securities. End with a one-line reminder that this is not financial advice.`;
+- Frame everything as informational observations about the user's own portfolio. Do not tell the user to buy or sell specific securities. This is not personalized financial advice.
+
+Output ONLY a single JSON object (no prose before or after, no markdown fences) with this exact shape:
+{
+  "summary": string,   // an executive summary of 4 to 5 short lines, separated by "\\n". Plain prose, no markdown symbols. Lead with the headline performance vs. benchmarks and inflation, then the one or two things that most matter. End the last line with a brief "Not financial advice." reminder.
+  "rows": [             // an overview of the portfolio by area; one row per relevant area (e.g. Equities, Crypto, Fixed income, FX, Tax). Order by importance.
+    { "area": string, "observation": string, "risk": string }
+  ]
+}
+Each "observation" and "risk" is one short, concrete phrase (no trailing period needed). Cite numbers from the figures where they sharpen the point.`;
 
 // Format the deterministic figures into a readable block the model quotes verbatim.
 function findingsText(data: ResearchData): string {
@@ -99,5 +114,39 @@ export async function generateAdvice(data: ResearchData): Promise<AdviceResult> 
     }
   }
 
-  return { analysis: textParts.join("").trim(), citations };
+  const { summary, rows } = parseAdvice(textParts.join("").trim());
+  return { summary, rows, citations };
+}
+
+// The model is asked for a single JSON object, but tolerate stray prose or a
+// markdown fence around it. Falls back to showing the raw text as the summary.
+function parseAdvice(text: string): { summary: string; rows: AdviceRow[] } {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start !== -1 && end > start) {
+    try {
+      const obj = JSON.parse(text.slice(start, end + 1)) as {
+        summary?: unknown;
+        rows?: unknown;
+      };
+      const summary = typeof obj.summary === "string" ? obj.summary.trim() : "";
+      const rows = Array.isArray(obj.rows)
+        ? obj.rows
+            .map((r) => {
+              const o = (r ?? {}) as Record<string, unknown>;
+              return {
+                area: typeof o.area === "string" ? o.area : "",
+                observation:
+                  typeof o.observation === "string" ? o.observation : "",
+                risk: typeof o.risk === "string" ? o.risk : "",
+              };
+            })
+            .filter((r) => r.area || r.observation || r.risk)
+        : [];
+      if (summary || rows.length) return { summary, rows };
+    } catch {
+      // fall through to the raw-text fallback
+    }
+  }
+  return { summary: text, rows: [] };
 }

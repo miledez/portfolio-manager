@@ -3,8 +3,15 @@
 import { useState } from "react";
 import { Sparkles, ExternalLink } from "lucide-react";
 
+interface AdviceRow {
+  area: string;
+  observation: string;
+  risk: string;
+}
+
 interface Advice {
-  analysis: string;
+  summary: string;
+  rows: AdviceRow[];
   citations: { url: string; title: string }[];
 }
 
@@ -74,9 +81,40 @@ export default function AdvisorCard({ enabled }: { enabled: boolean }) {
 
       {advice && (
         <div className="mt-4 border-t border-hairline pt-4">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">
-            {advice.analysis}
-          </p>
+          {advice.summary && (
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">
+              {advice.summary}
+            </p>
+          )}
+
+          {advice.rows.length > 0 && (
+            <div className="mt-4 overflow-hidden rounded-lg border border-hairline">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-hairline text-left text-[11px] uppercase tracking-wide text-muted">
+                      <th className="px-4 py-2.5 font-medium">Area</th>
+                      <th className="px-4 py-2.5 font-medium">Observation</th>
+                      <th className="px-4 py-2.5 font-medium">Risk</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {advice.rows.map((r, i) => (
+                      <tr
+                        key={`${r.area}-${i}`}
+                        className="border-b border-[#F1F2F4] last:border-0 hover:bg-[#FAFBFC]"
+                      >
+                        <td className="px-4 py-3 font-semibold">{r.area}</td>
+                        <td className="px-4 py-3 text-ink">{r.observation}</td>
+                        <td className="px-4 py-3 text-muted">{r.risk}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {advice.citations.length > 0 && (
             <div className="mt-4">
               <p className="mb-1.5 text-[11px] uppercase tracking-wide text-muted">
