@@ -7,9 +7,8 @@ A personal investment & asset portfolio dashboard: track holdings across asset c
 Brazilian fixed income), pull live prices on demand, see allocation, watch total value develop via
 daily snapshots, and plan against target allocations. On top of that is a **Research** view
 (`/research`): a comparison overview that normalizes every holding and benchmark (CDI, IPCA,
-Ibovespa) to **nominal / real / after-tax** annualized returns, a money-weighted (XIRR) portfolio
-return, and an optional **AI analysis** that narrates those figures with live market context as a
-short executive summary plus an Area/Observation/Risk overview table.
+Ibovespa) to **nominal / real / after-tax** annualized returns, plus a money-weighted (XIRR)
+portfolio return.
 The source-of-truth spec + visual design live in `portfolio-handoff/` — read
 `portfolio-handoff/DESIGN.md` and the UI draft `portfolio-handoff/reference/dashboard-draft.jsx`
 before touching UI. **Do not redesign**: one navy accent, green/red only for performance figures.
@@ -18,7 +17,7 @@ before touching UI. **Do not redesign**: one navy accent, green/red only for per
 - Next.js **16** (App Router) + React **19** + TypeScript
 - Tailwind **v4** — design tokens via `@theme` in `app/globals.css` (there is NO `tailwind.config.ts`)
 - Supabase (Postgres + magic-link Auth + RLS) via `@supabase/ssr`
-- recharts (charts), lucide-react (icons), `@anthropic-ai/sdk` (AI analysis)
+- recharts (charts), lucide-react (icons)
 - Vercel hosting + Vercel Cron; public repo `github.com/miledez/portfolio-manager`
 - Import alias `@/*` → repo root (no `src/`)
 
@@ -56,7 +55,7 @@ client state (live `prices`, `fx`, `allocBy`) and derives all figures through pu
 `lib/portfolio.ts` (`computeRows`/`computeTotals`/`computeAllocation`). Sub-components under
 `components/dashboard/`, `components/research/`, and `components/ui/` are leaf client components without
 their own `"use client"` where they inherit a boundary; the `/research` interactive cards
-(`AddFixedIncomeForm`, `ContributionsCard`, `AdvisorCard`) **do** declare `"use client"` since the
+(`AddFixedIncomeForm`, `ContributionsCard`) **do** declare `"use client"` since the
 research page is a Server Component.
 
 **Mutations are server actions** in `app/actions.ts` (`addHolding`, `addFixedIncome`, `removeHolding`,
@@ -90,7 +89,7 @@ at `fi_rate`%, IPCA = cumulative IPCA × `(1 + spread)^years`, PRE = `(1 + rate)
 `lib/research.ts` `buildResearchData(supabase)`, the **shared** builder that loads holdings +
 contributions, fetches prices/FX server-side, values fixed income, pulls benchmarks (BCB CDI/IPCA +
 brapi Ibovespa), builds the comparison, and computes the money-weighted (XIRR) portfolio return. The
-page renders `ComparisonTable`, `AdvisorCard`, `ContributionsCard`, `AddFixedIncomeForm`. The
+page renders `ComparisonTable`, `ContributionsCard`, `AddFixedIncomeForm`. The
 deterministic engine is pure and testable:
 - `lib/returns.ts` — `xirr` (Newton + bisection), `annualize`, `cagr`, Fisher `realReturn`, `daysBetween`.
 - `lib/tax/br.ts` — regressive IR table for fixed income (22.5%→15% by holding days), 15% equity/crypto,
@@ -103,19 +102,6 @@ deterministic engine is pure and testable:
   `compoundCdiFactor` / `cumulativeIpcaFactor`. Date filters are mandatory (BCB caps a request at 10y).
 - `lib/marketdata/brapi.ts` — B3 quotes + daily history + Ibovespa (`^BVSP`). Optional `BRAPI_TOKEN`
   lifts the free-tier limit.
-
-**AI analysis (Phase 4):** `app/api/advice/route.ts` (auth-gated POST, `maxDuration = 60`) **recomputes**
-via `buildResearchData` (so the AI can't be fed bogus numbers from the client) and calls `lib/advisor.ts`
-`generateAdvice`. The advisor formats the deterministic figures into a quote-exactly prompt and calls
-`claude-opus-4-8` with the `web_search_20260209` server tool (`max_uses: 3`) + adaptive thinking,
-handling the `pause_turn` loop (bounded to 3 resumes). It prompts for a **single JSON object** and
-`parseAdvice` extracts it (tolerating stray prose/fences, falling back to raw text), returning
-`{ summary, rows, citations }`: a 4–5 line executive summary plus **Area/Observation/Risk** overview
-rows. `AdvisorCard` renders the summary, an overview table styled like `ComparisonTable`, then sources;
-it parses the response defensively so a platform-level timeout/crash (plain-text body) shows a friendly
-message, not a JSON parse error. **Claude narrates the numbers — it never recomputes or invents them.**
-Gated by `ANTHROPIC_API_KEY`; `AdvisorCard` hides/disables the button when unset. Informational, not
-personalized financial advice.
 
 **Snapshots:** `app/api/snapshot/route.ts` (GET, guarded by `CRON_SECRET` Bearer) uses the admin client
 to read every user's holdings, prices each unique market ticker once, **accrues fixed income from BCB**,
@@ -147,9 +133,7 @@ project's database, so keep the types in sync manually and apply migrations your
 ## Deploy & environment
 - Push to `main` → Vercel auto-deploys (project linked to the repo). The Vercel dashboard Framework
   Preset is null, so `vercel.json` pins `"framework": "nextjs"` — keep that, or every route 404s.
-- Optional env vars: `ANTHROPIC_API_KEY` (enables the AI analysis on `/research` via
-  `app/api/advice` → `lib/advisor.ts`, model `claude-opus-4-8` with web search; the feature is
-  hidden when unset), `BRAPI_TOKEN` (lifts brapi's free-tier limit for the Ibovespa benchmark).
+- Optional env vars: `BRAPI_TOKEN` (lifts brapi's free-tier limit for the Ibovespa benchmark).
 - Required env vars in Vercel **and** `.env.local` (env changes require a redeploy to take effect):
   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
   `MARKET_DATA_API_KEY` (Finnhub), `CRON_SECRET`.

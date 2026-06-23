@@ -1,6 +1,5 @@
 // Shared server-side builder for the research view's deterministic figures.
-// Used by both the /research page and the /api/advice route so the AI narrates
-// exactly the numbers the user sees — it never recomputes or invents them.
+// Powers the /research page's comparison overview and money-weighted return.
 import type { createClient } from "@/lib/supabase/server";
 import { isCash, isFixedIncome } from "@/lib/constants";
 import { nativeCurrency } from "@/lib/currency";

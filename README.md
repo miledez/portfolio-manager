@@ -25,8 +25,8 @@ prices on demand, view allocation, and watch total value develop via daily snaps
 ## Environment variables
 
 See `.env.example`. Server-only secrets (`SUPABASE_SERVICE_ROLE_KEY`, `MARKET_DATA_API_KEY`,
-`CRON_SECRET`, optional `ANTHROPIC_API_KEY`) must never be exposed to the client. The same vars
-must exist in Vercel → Project Settings → Environment Variables.
+`CRON_SECRET`) must never be exposed to the client. The same vars must exist in
+Vercel → Project Settings → Environment Variables.
 
 ## Commands
 

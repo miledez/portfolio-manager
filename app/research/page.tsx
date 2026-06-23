@@ -7,7 +7,6 @@ import { money } from "@/lib/format";
 import ComparisonTable from "@/components/research/ComparisonTable";
 import AddFixedIncomeForm from "@/components/research/AddFixedIncomeForm";
 import ContributionsCard from "@/components/research/ContributionsCard";
-import AdvisorCard from "@/components/research/AdvisorCard";
 
 export default async function ResearchPage() {
   const supabase = await createClient();
@@ -18,8 +17,6 @@ export default async function ResearchPage() {
 
   const { comparison, totalValue, portfolioReturn, contributions } =
     await buildResearchData(supabase);
-
-  const aiEnabled = !!process.env.ANTHROPIC_API_KEY;
 
   return (
     <div className="min-h-screen bg-canvas text-ink">
@@ -49,8 +46,6 @@ export default async function ResearchPage() {
         </div>
 
         <ComparisonTable rows={comparison} />
-
-        <AdvisorCard enabled={aiEnabled} />
 
         <ContributionsCard
           contributions={contributions}
