@@ -75,6 +75,11 @@ export async function generateAdvice(data: ResearchData): Promise<AdviceResult> 
     model: MODEL,
     max_tokens: 4096,
     thinking: { type: "adaptive" },
+    // The figures are already computed deterministically — Claude only narrates
+    // them and adds context, so it doesn't need deep reasoning. Low effort cuts
+    // thinking time and, per the model's behavior, also consolidates tool calls
+    // into fewer web searches, keeping the route well under the 60s limit.
+    output_config: { effort: "low" },
     system: SYSTEM,
     // Each search round-trips to the web and back through the model, so it's
     // the dominant latency cost. Cap it tighter to stay well under the 60s
