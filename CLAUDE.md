@@ -8,7 +8,8 @@ Brazilian fixed income), pull live prices on demand, see allocation, watch total
 daily snapshots, and plan against target allocations. On top of that is a **Research** view
 (`/research`): a comparison overview that normalizes every holding and benchmark (CDI, IPCA,
 Ibovespa) to **nominal / real / after-tax** annualized returns, a money-weighted (XIRR) portfolio
-return, and an optional **AI analysis** that narrates those figures with live market context.
+return, and an optional **AI analysis** that narrates those figures with live market context as a
+short executive summary plus an Area/Observation/Risk overview table.
 The source-of-truth spec + visual design live in `portfolio-handoff/` — read
 `portfolio-handoff/DESIGN.md` and the UI draft `portfolio-handoff/reference/dashboard-draft.jsx`
 before touching UI. **Do not redesign**: one navy accent, green/red only for performance figures.
@@ -106,10 +107,15 @@ deterministic engine is pure and testable:
 **AI analysis (Phase 4):** `app/api/advice/route.ts` (auth-gated POST, `maxDuration = 60`) **recomputes**
 via `buildResearchData` (so the AI can't be fed bogus numbers from the client) and calls `lib/advisor.ts`
 `generateAdvice`. The advisor formats the deterministic figures into a quote-exactly prompt and calls
-`claude-opus-4-8` with the `web_search_20260209` server tool + adaptive thinking, handling the
-`pause_turn` loop, returning a narrative + citations. **Claude narrates the numbers — it never
-recomputes or invents them.** Gated by `ANTHROPIC_API_KEY`; `AdvisorCard` hides/disables the button when
-unset. Informational, not personalized financial advice.
+`claude-opus-4-8` with the `web_search_20260209` server tool (`max_uses: 3`) + adaptive thinking,
+handling the `pause_turn` loop (bounded to 3 resumes). It prompts for a **single JSON object** and
+`parseAdvice` extracts it (tolerating stray prose/fences, falling back to raw text), returning
+`{ summary, rows, citations }`: a 4–5 line executive summary plus **Area/Observation/Risk** overview
+rows. `AdvisorCard` renders the summary, an overview table styled like `ComparisonTable`, then sources;
+it parses the response defensively so a platform-level timeout/crash (plain-text body) shows a friendly
+message, not a JSON parse error. **Claude narrates the numbers — it never recomputes or invents them.**
+Gated by `ANTHROPIC_API_KEY`; `AdvisorCard` hides/disables the button when unset. Informational, not
+personalized financial advice.
 
 **Snapshots:** `app/api/snapshot/route.ts` (GET, guarded by `CRON_SECRET` Bearer) uses the admin client
 to read every user's holdings, prices each unique market ticker once, **accrues fixed income from BCB**,
